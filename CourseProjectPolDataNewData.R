@@ -184,7 +184,7 @@ crossValidation <- function() {
     
     rf.cv <- rfcv(train[2:length(train)], rf.mdl$predicted, cv.fold=10)
     
-    # Showing the error for equation powers
+    # Showing the error CV
     rf.cv$error.cv
     #      8          4          2          1 
     # 0.02261003 0.01251235 0.04631764 0.17495335 
