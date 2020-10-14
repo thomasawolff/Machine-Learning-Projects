@@ -160,7 +160,7 @@ class dataSetupRun(object):
         ##93  <tensorflow.python.keras.layers.core.Dense object at 0x000001E0002F6308>                        ...  True
         ##94  <tensorflow.python.keras.layers.core.Dense object at 0x000001E000317F08>                        ...  True )
 
-        self.model.compile(optimizer=self.optimizerFunc, # compiling the model using adam optimizer
+        self.model.compile(optimizer=self.optimizerFunc, # compiling the model using adagrad optimizer
                       loss=CategoricalCrossentropy(from_logits=True),
                       metrics=['accuracy'])
 
