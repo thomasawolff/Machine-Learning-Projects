@@ -27,12 +27,11 @@ class textAnalytics(object):
         self.stringsList = []
         self.file1 = file1
         self.review_df = pd.read_csv(self.file1,low_memory=False)
-        #self.review_df = self.review_df['commentText']
         self.token_pattern = '(?u)\\b\\w+\\b'
-        self.field = 'commentText'
+        self.field = 'commentText' ## This is the target field for any analysis
         #print(list(self.review_df))
         self.review_df = self.review_df[['videoID','categoryID','views','likes','dislikes',\
-                                         'commentCount','commentText','commentLikes','replies']]
+                                         'commentCount','commentText','commentLikes','replies']] ## All of the fields in the csv file
         self.stopWords = stopwords.words('english')
         #print(self.stopWords)
         
