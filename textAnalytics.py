@@ -137,8 +137,8 @@ class textAnalytics(object):
     def sentimentAnalysis(self):
         pol = []
         sub = []
-        comm = self.review_df 
-        comm = comm.sample(100)
+        self.comm = self.review_df 
+        self.comm = self.comm.sample(100)
         for i in comm.commentText.values:
             try:
                 analysis = TextBlob(i)
@@ -146,30 +146,30 @@ class textAnalytics(object):
             except:
                 pol.append(0)
 
-        for i in comm.commentText.values:
+        for i in self.comm.commentText.values:
             try:
                 analysis = TextBlob(i)
                 sub.append(round(analysis.sentiment.subjectivity,2))
             except:
                 sub.append(0)
 
-        comm['polarity']=pol
-        comm['subjectivity']=sub
-        #comm.to_csv('youTubeVideosSentimentAnalysisSample10.csv',sep=',',encoding='utf-8')
-        print(comm)
+        self.comm['polarity']=pol
+        self.comm['subjectivity']=sub
+        #comm.to_csv('youTubeVideosSentimentAnalysisSample.csv',sep=',',encoding='utf-8')
+        print(self.comm)
 
         plt.grid(axis='y', alpha=0.50)
         plt.title('Histogram of comment sentiment')
         plt.xlabel('Sentiment Scores')
         plt.ylabel('Frequency')
-        sns.distplot(comm['polarity'],hist=False,fit=norm,kde=True,norm_hist=True)
+        sns.distplot(self.comm['polarity'],hist=False,fit=norm,kde=True,norm_hist=True)
         plt.show()
 
         plt.grid(axis='y', alpha=0.50)
         plt.title('Histogram of comment sentiment')
         plt.xlabel('Sentiment Scores')
         plt.ylabel('Frequency')
-        sns.distplot(comm['subjectivity'],hist=False,fit=norm,kde=True,norm_hist=True)
+        sns.distplot(self.comm['subjectivity'],hist=False,fit=norm,kde=True,norm_hist=True)
         plt.show()
         ##                    videoID       categoryID  views  ...    replies  polarity   subjectivity
         ##          251449  LLGENw4C1jk          17   1002386  ...      0.0      0.50          0.50
@@ -182,16 +182,38 @@ class textAnalytics(object):
 url = (r'C:\Users\moose_f8sa3n2\Google Drive\Research Methods\Course Project\YouTube Data\Unicode Files\youTubeVideosUTF.csv')
 
 go = textAnalytics(url)
-#go.bowConverter()
-#go.wordCount()
-#go.triGramConverter()
-##go.gramPlotter()
-#go.wordLem()
-##go.wordCount()
-#go.stringCleaning()
-##go.tagsMaker()
-##go.computeIDF()
+
+##if __name__ == '__main__':
+##    Pool(go.bowConverter())
+
+##if __name__ == '__main__':
+##    Pool(go.wordCount())
+
+##if __name__ == '__main__':
+##    Pool(go.triGramConverter())
+
+##if __name__ == '__main__':
+##    Pool(go.triGramConverter())
+
+##if __name__ == '__main__':
+##    Pool(go.gramPlotter())
+
+##if __name__ == '__main__':
+##    Pool(go.wordLem())
+
+##if __name__ == '__main__':
+##    Pool(go.wordLem())
+
+##if __name__ == '__main__':
+##    Pool(go.stringCleaning())
+
+##if __name__ == '__main__':
+##    Pool(go.tagsMaker())
+
+##if __name__ == '__main__':
+##    Pool(go.computeIDF())
+
 if __name__ == '__main__':
     Pool(go.sentimentAnalysis())
-#go.sentimentAnalysis()
+
 
