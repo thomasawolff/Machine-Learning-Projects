@@ -4,11 +4,14 @@ import math
 import nltk.corpus
 import operator
 import pandas as pd
-import matplotlib.pyplot as plt
 import seaborn as sns
+from nltk import ne_chunk
+from textblob import TextBlob
+from multiprocessing import Pool
+import matplotlib.pyplot as plt
+from scipy.stats import norm
 from nltk.corpus import stopwords
 from nltk.stem import wordnet
-from nltk import ne_chunk
 from nltk.stem import WordNetLemmatizer
 lemmatizer = WordNetLemmatizer()
 from collections import Counter
@@ -20,14 +23,16 @@ from sklearn.feature_extraction.text import CountVectorizer
 class textAnalytics(object):
 
     def __init__(self,file1):
-        self.limit = 10
+        self.limit = 100
         self.stringsList = []
         self.file1 = file1
-        self.review_df = pd.read_csv(self.file1)
+        self.review_df = pd.read_csv(self.file1,low_memory=False)
+        #self.review_df = self.review_df['commentText']
         self.token_pattern = '(?u)\\b\\w+\\b'
-        self.field = 'text'
+        self.field = 'commentText'
         #print(list(self.review_df))
-        self.review_df = self.review_df[['text','cool','useful','funny','review_count','stars']]
+        self.review_df = self.review_df[['videoID','categoryID','views','likes','dislikes',\
+                                         'commentCount','commentText','commentLikes','replies']]
         self.stopWords = stopwords.words('english')
         #print(self.stopWords)
         
@@ -68,7 +73,7 @@ class textAnalytics(object):
         plt.margins(0.1)
         plt.xticks(range(3), ['unigram', 'bigram', 'trigram'])
         plt.tick_params(labelsize=14)
-        plt.title('Number of ngrams in the first 10,000 reviews of the Yelp dataset', {'fontsize':16})
+        plt.title('Number of ngrams in the first 10,000 reviews of the dataset', {'fontsize':16})
         plt.show()
 
     def wordLem(self):
@@ -85,7 +90,7 @@ class textAnalytics(object):
     def stringCleaning(self):
         self.wordCount()
         lengthList = []
-        punctuationList = ['-?','!',',',':',';','()',"''",'.',"``",'|','^','..','...']
+        punctuationList = ['-?','!',',',':',';','()',"''",'.',"``",'|','^','..','...','--','=']
         for i in range(0,self.limit):
             for words in self.stringsList[i]:
                 if len(words)>0:
@@ -93,7 +98,7 @@ class textAnalytics(object):
         post_punctuation = [word for word in lengthList if word not in punctuationList]
         noStopWords = [word for word in post_punctuation if word not in self.stopWords]
         self.postPunctCount = Counter(noStopWords)
-        ## print(self.postPunctCount)
+        #print(self.postPunctCount)
         ##        Counter({'I': 9, "n't": 6, 'The': 5, 'go': 5, 'good': 5, "'s": 5,
         ##                 'My': 4, 'It': 4, 'place': 4, 'menu': 4, ')': 4, 'outside': 3,
         ##                 'food': 3, 'like': 3, "'ve": 3, 'amazing': 3, 'delicious': 3,
@@ -129,15 +134,64 @@ class textAnalytics(object):
         ##          say/VBP
         ##          (PERSON Mistakes/NNP)
 
+    def sentimentAnalysis(self):
+        pol = []
+        sub = []
+        comm = self.review_df 
+        comm = comm.sample(100)
+        for i in comm.commentText.values:
+            try:
+                analysis = TextBlob(i)
+                pol.append(round(analysis.sentiment.polarity,2))
+            except:
+                pol.append(0)
 
-url = ('https://raw.githubusercontent.com/thomasawolff/verification_text_data/master/YelpReviews10000.csv')
+        for i in comm.commentText.values:
+            try:
+                analysis = TextBlob(i)
+                sub.append(round(analysis.sentiment.subjectivity,2))
+            except:
+                sub.append(0)
+
+        comm['polarity']=pol
+        comm['subjectivity']=sub
+        #comm.to_csv('youTubeVideosSentimentAnalysisSample10.csv',sep=',',encoding='utf-8')
+        print(comm)
+
+        plt.grid(axis='y', alpha=0.50)
+        plt.title('Histogram of comment sentiment')
+        plt.xlabel('Sentiment Scores')
+        plt.ylabel('Frequency')
+        sns.distplot(comm['polarity'],hist=False,fit=norm,kde=True,norm_hist=True)
+        plt.show()
+
+        plt.grid(axis='y', alpha=0.50)
+        plt.title('Histogram of comment sentiment')
+        plt.xlabel('Sentiment Scores')
+        plt.ylabel('Frequency')
+        sns.distplot(comm['subjectivity'],hist=False,fit=norm,kde=True,norm_hist=True)
+        plt.show()
+        ##                    videoID       categoryID  views  ...    replies  polarity   subjectivity
+        ##          251449  LLGENw4C1jk          17   1002386  ...      0.0      0.50          0.50
+        ##          39834   3VVnY86ulA8          22    802134  ...      0.0      0.00          0.10
+        ##          203460  iA86imHKCMw          17   3005399  ...      0.0     -0.08          0.69
+        ##          345225  RRkdV_xmYOI          23    367544  ...      0.0      0.13          0.76
+        ##          402953  vQ3XgMKAgxc          10  51204658  ...      0.0      0.25          0.50
+
+
+url = (r'C:\Users\moose_f8sa3n2\Google Drive\Research Methods\Course Project\YouTube Data\Unicode Files\youTubeVideosUTF.csv')
 
 go = textAnalytics(url)
 #go.bowConverter()
+#go.wordCount()
+#go.triGramConverter()
 ##go.gramPlotter()
 #go.wordLem()
 ##go.wordCount()
-##go.stringCleaning()
-go.tagsMaker()
+#go.stringCleaning()
+##go.tagsMaker()
 ##go.computeIDF()
+if __name__ == '__main__':
+    Pool(go.sentimentAnalysis())
+#go.sentimentAnalysis()
 
