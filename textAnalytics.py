@@ -28,6 +28,11 @@ from nltk.tokenize import word_tokenize
 from sklearn.cluster import AgglomerativeClustering
 from sklearn.feature_extraction.text import CountVectorizer
 
+import tensorflow as tf
+import tensorflow_hub as hub
+import tensorflow.compat.v1 as tf
+tf.disable_v2_behavior()
+
 
 
 class textAnalytics(object):
@@ -176,7 +181,7 @@ class textAnalytics(object):
         self.comm.loc[self.comm['polarity'] < 0, 'sentimentBucket'] = -1
         self.comm.loc[self.comm['polarity'] == 0, 'sentimentBucket'] = 0
         self.comm.loc[self.comm['polarity'] > 0, 'sentimentBucket'] = 1
-        self.comm.to_csv('youTubeVideosSentimentAnalysisSample10000.csv',sep=',',encoding='utf-8')
+        #self.comm.to_csv('youTubeVideosSentimentAnalysisSample10000.csv',sep=',',encoding='utf-8')
         #print(self.comm)
         ##                    videoID       categoryID  views  ...    replies  polarity   subjectivity
         ##          251449  LLGENw4C1jk          17   1002386  ...      0.0      0.50          0.50
@@ -210,8 +215,10 @@ class textAnalytics(object):
     def dataModify(self):
         self.number_clusters = 5
         self.sentimentAnalysis()
-        column1 = 9
-        column2 = 10
+        self.comm['views'] = np.log2(self.comm['views'])
+        self.comm = self.comm[['videoID','categoryID','views','commentText','polarity','subjectivity','sentimentBucket']].copy()
+        column1 = 4
+        column2 = 5
         self.X = self.comm.iloc[:,[column1,column2]].values
         #print(self.X)
 
@@ -253,7 +260,8 @@ class textAnalytics(object):
         self.clust3 = self.comm.loc[self.comm['clusters'] == 2]
         self.clust4 = self.comm.loc[self.comm['clusters'] == 3]
         self.clust5 = self.comm.loc[self.comm['clusters'] == 4]
-        #self.comm['commentText'].to_csv('youTubeVideosSentimentAnalysisOutput.csv',sep=',',encoding='utf-8')
+        self.commNums = self.comm[['videoID','categoryID','views','polarity','subjectivity','sentimentBucket']].copy()
+        self.commNums.to_csv('youTubeVideosSentimentAnalysisOutput.csv',sep=',',encoding='utf-8')
        
 
     def kMeansVisualizer(self):
@@ -273,7 +281,7 @@ class textAnalytics(object):
         self.kMeansClustering()
         wordcloud = WordCloud(
             background_color='white',
-            stopwords= ["dtype","commentText"]+self.stopWords,
+            stopwords= ["dtype","commentText"]+stopwords.words('english'),
             max_words=200,
             max_font_size=40, 
             scale=3
@@ -283,12 +291,35 @@ class textAnalytics(object):
         plt.axis('off')
         plt.imshow(wordcloud)
         plt.show()
-       
-       
+
+
+    def sentenceVectorizer(self):
+        embedded = []
+        file = pd.read_csv('USvideos.csv', error_bad_lines=False)
+        title = file[['video_id','title']].copy()
+        #print(title)
+        embed = hub.Module(r'C:\Users\moose_f8sa3n2\Google Drive\Research Methods\Course Project\YouTube Data\Unicode Files')
+        tf.logging.set_verbosity(tf.logging.ERROR)
+
+        with tf.Session() as session:
+            session.run([tf.global_variables_initializer(), tf.tables_initializer()])
+            message_embeddings = session.run(embed(title['title']))
+
+        for i, message_embedding in enumerate(np.array(message_embeddings).tolist()):
+##           print("Message: {}".format(title['title'][i]))
+##           print("Embedding size: {}".format(len(message_embedding)))
+            message_embedding_snippet = ", ".join((str(x) for x in message_embedding[:3]))
+##           print("Embedding[{},...]\n".format(message_embedding_snippet))
+            embedded.append(message_embedding_snippet)
+        title['embeddedValue'] = embedded
+        title.to_csv('sentencesEncoded.csv',sep=',',encoding='utf-8')
+        
       
 
 
 url = (r'C:\Users\moose_f8sa3n2\Google Drive\Research Methods\Course Project\YouTube Data\Unicode Files\youTubeVideosUTF.csv')
+first_column = 10
+second_column = 11
 affinity = 'euclidean'
 linkage = 'ward'
 
@@ -327,6 +358,7 @@ go = textAnalytics(url)
 ##    Pool(go.descriptiveStats())
 
 
+
 #go.distPlotter()
 #go.sentimentAnalysis()
 
@@ -344,7 +376,9 @@ go = textAnalytics(url)
 #go.kMeansVisualizer()
 
 # create a word cloud from comments
-go.wordCloudVisualizer()
+#go.wordCloudVisualizer()
+
+go.sentenceVectorizer()
 
 
 
