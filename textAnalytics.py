@@ -248,9 +248,6 @@ class textAnalytics(object):
         self.kmeans = KMeans(n_clusters = self.number_clusters, init = 'k-means++',max_iter=300,n_init=10)
         self.y_kmeans = self.kmeans.fit_predict(self.X)
         self.comm['clusters'] = self.y_kmeans
-        #print(self.comm)
-        self.comm['commentText'] = self.comm['commentText'].str.replace('commentText','')
-        #self.comm = self.comm.loc[self.comm['commentText'] != 'dtype']
         self.clust1 = self.comm.loc[self.comm['clusters'] == 0]
         self.clust2 = self.comm.loc[self.comm['clusters'] == 1]
         self.clust3 = self.comm.loc[self.comm['clusters'] == 2]
