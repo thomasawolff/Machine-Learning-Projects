@@ -273,7 +273,7 @@ class textAnalytics(object):
         self.kMeansClustering()
         wordcloud = WordCloud(
             background_color='white',
-            stopwords= ["dtype","commentText"]+stopwords.words('english'),
+            stopwords= ["dtype","commentText"]+self.stopWords,
             max_words=200,
             max_font_size=40, 
             scale=3
