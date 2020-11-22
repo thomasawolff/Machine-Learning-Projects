@@ -249,12 +249,14 @@ class textAnalytics(object):
         self.y_kmeans = self.kmeans.fit_predict(self.X)
         self.comm['clusters'] = self.y_kmeans
         #print(self.comm)
+        self.comm['commentText'] = self.comm['commentText'].str.replace('commentText','')
+        #self.comm = self.comm.loc[self.comm['commentText'] != 'dtype']
         self.clust1 = self.comm.loc[self.comm['clusters'] == 0]
         self.clust2 = self.comm.loc[self.comm['clusters'] == 1]
         self.clust3 = self.comm.loc[self.comm['clusters'] == 2]
         self.clust4 = self.comm.loc[self.comm['clusters'] == 3]
         self.clust5 = self.comm.loc[self.comm['clusters'] == 4]
-        #self.comm.to_csv('youTubeVideosSentimentAnalysisOutput.csv',sep=',',encoding='utf-8')
+        #self.comm['commentText'].to_csv('youTubeVideosSentimentAnalysisOutput.csv',sep=',',encoding='utf-8')
        
 
     def kMeansVisualizer(self):
@@ -274,11 +276,11 @@ class textAnalytics(object):
         self.kMeansClustering()
         wordcloud = WordCloud(
             background_color='white',
-            stopwords=stopwords.words('english'),
+            stopwords= ["dtype","commentText"]+stopwords.words('english'),
             max_words=200,
             max_font_size=40, 
             scale=3
-            ).generate(str(self.clust3['commentText']))
+            ).generate(str(self.clust1['commentText']))
         fig = plt.figure(1, figsize=(6,6))
         plt.title('Word cloud of chosen cluster')
         plt.axis('off')
@@ -290,8 +292,6 @@ class textAnalytics(object):
 
 
 url = (r'C:\Users\moose_f8sa3n2\Google Drive\Research Methods\Course Project\YouTube Data\Unicode Files\youTubeVideosUTF.csv')
-
-csv_file = 'youTubeVideosSentimentAnalysisSample10000.csv'
 first_column = 10
 second_column = 11
 affinity = 'euclidean'
@@ -334,7 +334,7 @@ go = textAnalytics(url)
 
 
 #go.distPlotter()
-go.sentimentAnalysis()
+#go.sentimentAnalysis()
 
 
 #clust = clustering(first_column,second_column)
@@ -352,7 +352,7 @@ go.sentimentAnalysis()
 #go.kMeansVisualizer()
 
 # create a word cloud from comments
-#go.wordCloudVisualizer()
+go.wordCloudVisualizer()
 
 ##if __name__ == '__main__':
 ##    Pool(clust.aprioriAlgo())
