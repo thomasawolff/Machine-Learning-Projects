@@ -329,12 +329,9 @@ go = textAnalytics(url)
 ##    Pool(go.descriptiveStats())
 
 
-
 #go.distPlotter()
 #go.sentimentAnalysis()
 
-
-#clust = clustering(first_column,second_column)
 
 # create the dendrogram for hierarchical method
 #go.dendrogram(linkage)
@@ -351,8 +348,6 @@ go = textAnalytics(url)
 # create a word cloud from comments
 go.wordCloudVisualizer()
 
-##if __name__ == '__main__':
-##    Pool(clust.aprioriAlgo())
 
 
 
