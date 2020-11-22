@@ -44,7 +44,7 @@ class textAnalytics(object):
         self.review_df = self.review_df[['videoID','categoryID','views','likes','dislikes',\
                                          'commentCount','commentText','commentLikes','replies']]
         self.stopWords = stopwords.words('english')
-        self.review_df = self.review_df.sample(10000)
+        self.review_df = self.review_df.sample(1000)
         #print(self.stopWords)
 
     def bowConverter(self):
@@ -173,12 +173,11 @@ class textAnalytics(object):
                 sub.append(0)
         self.comm['polarity']=pol
         self.comm['subjectivity']=sub
-        for i in range(0,len(pol)):
-            if pol[i] < 0: self.comm['sentimentBucket'] = -1
-            elif pol[i] > 0: self.comm['sentimentBucket'] = 1
-            else: self.comm['sentimentBucket'] = 0
+        self.comm.loc[self.comm['polarity'] < 0, 'sentimentBucket'] = -1
+        self.comm.loc[self.comm['polarity'] == 0, 'sentimentBucket'] = 0
+        self.comm.loc[self.comm['polarity'] > 0, 'sentimentBucket'] = 1
         self.comm.to_csv('youTubeVideosSentimentAnalysisSample10000.csv',sep=',',encoding='utf-8')
-        print(self.comm)
+        #print(self.comm)
         ##                    videoID       categoryID  views  ...    replies  polarity   subjectivity
         ##          251449  LLGENw4C1jk          17   1002386  ...      0.0      0.50          0.50
         ##          39834   3VVnY86ulA8          22    802134  ...      0.0      0.00          0.10
