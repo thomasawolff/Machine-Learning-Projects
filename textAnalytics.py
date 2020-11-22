@@ -3,8 +3,14 @@ import nltk
 import math
 import nltk.corpus
 import operator
+import numpy as np
 import pandas as pd
 import seaborn as sns
+from PIL import Image
+from apyori import apriori
+from wordcloud import WordCloud
+from scipy.stats import pearsonr
+from scipy.stats import kurtosis
 from nltk import ne_chunk
 from textblob import TextBlob
 from sklearn.cluster import KMeans
@@ -33,13 +39,14 @@ class textAnalytics(object):
         self.review_df = pd.read_csv(self.file1,low_memory=False)
         #self.review_df = self.review_df['commentText']
         self.token_pattern = '(?u)\\b\\w+\\b'
-        self.field = 'commentText' # the target field in the csv file for analysis
+        self.field = 'commentText'
         #print(list(self.review_df))
-        self.review_df = self.review_df[['videoID','categoryID','views','likes','dislikes',\  # the fields in the csv file
+        self.review_df = self.review_df[['videoID','categoryID','views','likes','dislikes',\
                                          'commentCount','commentText','commentLikes','replies']]
         self.stopWords = stopwords.words('english')
+        self.review_df = self.review_df.sample(10000)
         #print(self.stopWords)
-        
+
     def bowConverter(self):
         bow_converter = CountVectorizer(token_pattern=self.token_pattern)
         x = bow_converter.fit_transform(self.review_df[self.field])
@@ -80,35 +87,42 @@ class textAnalytics(object):
         plt.title('Number of ngrams in the first 10,000 reviews of the dataset', {'fontsize':16})
         plt.show()
 
+
     def wordLem(self):
         self.bowConverter()
         for line in self.words:
             print(line+":"+lemmatizer.lemmatize(line))
 
+
     def wordCount(self):
         for line in self.review_df[self.field]:
             wordsTokens = word_tokenize(line)
             self.stringsList.append(Counter(wordsTokens))
+        ##print(self.stringsList)
         ##  Counter({'.': 11, 'the': 9, 'and': 8, 'was': 8, 'It': 5, 'I': 5, 'it': 4, 'their': 4
+
 
     def stringCleaning(self):
         self.wordCount()
         lengthList = []
         punctuationList = ['-?','!',',',':',';','()',"''",'.',"``",'|','^','..','...','--','=']
         for i in range(0,self.limit):
-            for words in self.stringsList[i]:
-                if len(words)>0:
-                    lengthList.append(words)
+            try:
+                for words in self.stringsList[i]:
+                    if len(words)>0:
+                        lengthList.append(words)
+            except IndexError: pass
         post_punctuation = [word for word in lengthList if word not in punctuationList]
         noStopWords = [word for word in post_punctuation if word not in self.stopWords]
         self.postPunctCount = Counter(noStopWords)
-        #print(self.postPunctCount)
+        # print(self.postPunctCount)
         ##        Counter({'I': 9, "n't": 6, 'The': 5, 'go': 5, 'good': 5, "'s": 5,
         ##                 'My': 4, 'It': 4, 'place': 4, 'menu': 4, ')': 4, 'outside': 3,
         ##                 'food': 3, 'like': 3, "'ve": 3, 'amazing': 3, 'delicious': 3,
         ##                 'came': 3, 'wait': 3, 'back': 3, 'They': 3, 'evening': 3, 'try': 3,
         ##                 'one': 3, '(': 3, 'awesome': 3,'much': 3, 'took': 2, 'made': 2,
         ##                 'sitting': 2, 'Our': 2, 'arrived': 2, 'quickly': 2, 'looked': 2, ....
+
 
     def tagsMaker(self):
         # If you want to run this code, install Ghostscript first
@@ -137,12 +151,13 @@ class textAnalytics(object):
         ##          always/RB
         ##          say/VBP
         ##          (PERSON Mistakes/NNP)
+    
 
     def sentimentAnalysis(self):
+        self.stringCleaning()
         pol = []
         sub = []
         self.comm = self.review_df 
-        self.comm = self.comm.sample(25000)
         for i in self.comm.commentText.values:
             try:
                 analysis = TextBlob(i)
@@ -156,10 +171,13 @@ class textAnalytics(object):
                 sub.append(round(analysis.sentiment.subjectivity,2))
             except:
                 sub.append(0)
-
         self.comm['polarity']=pol
         self.comm['subjectivity']=sub
-        self.comm.to_csv('youTubeVideosSentimentAnalysisSample.csv',sep=',',encoding='utf-8')
+        for i in range(0,len(pol)):
+            if pol[i] < 0: self.comm['sentimentBucket'] = -1
+            elif pol[i] > 0: self.comm['sentimentBucket'] = 1
+            else: self.comm['sentimentBucket'] = 0
+        self.comm.to_csv('youTubeVideosSentimentAnalysisSample10000.csv',sep=',',encoding='utf-8')
         print(self.comm)
         ##                    videoID       categoryID  views  ...    replies  polarity   subjectivity
         ##          251449  LLGENw4C1jk          17   1002386  ...      0.0      0.50          0.50
@@ -167,95 +185,116 @@ class textAnalytics(object):
         ##          203460  iA86imHKCMw          17   3005399  ...      0.0     -0.08          0.69
         ##          345225  RRkdV_xmYOI          23    367544  ...      0.0      0.13          0.76
         ##          402953  vQ3XgMKAgxc          10  51204658  ...      0.0      0.25          0.50
+        
 
 
     def distPlotter(self):
         self.sentimentAnalysis()
+        name1 = str('commentCount')
+        field = self.comm[name]
+        print(round(field.drop_duplicates().describe(include='all')),2)
+        print('Kurtosis:',round(kurtosis(field),2))
+        print('Pearson R Correlation Views/Comments:',pearsonr(self.comm['polarity'],self.comm['subjectivity']))
+        #print('Pearson R Correlation Views/Likes:',pearsonr(self.comm['views'],self.comm['likes']))
+        #print('Pearson R Correlation Views/Dislikes:',pearsonr(self.comm['views'],self.comm['dislikes']))
         plt.grid(axis='y', alpha=0.50)
-        plt.title('Histogram of comment sentiment')
-        plt.xlabel('Sentiment Scores')
-        plt.ylabel('Frequency')
-        sns.distplot(self.comm['polarity'],hist=False,fit=norm,kde=True,norm_hist=True)
-        #x,y = sns.kdeplot(self.comm['polarity']).get_lines()[0].get_data()
+        plt.title('Histogram of '+name1)
+        plt.xlabel(name2)
+        plt.ylabel('Subjectivity')
+        plt.hist(field,bins=70)
+        plt.ticklabel_format(style='plain')
+        #sns.distplot(self.comm['views'],hist=True,fit=norm,kde=False,norm_hist=False)
+        #x,y = sns.kdeplot(self.comm['views']).get_lines()[0].get_data()
         plt.show()
 
-        plt.grid(axis='y', alpha=0.50)
-        plt.title('Histogram of comment subjectivity')
-        plt.xlabel('Subjectivity Scores')
-        plt.ylabel('Frequency')
-        #sns.distplot(self.comm['subjectivity'],hist=False,fit=norm,kde=True,norm_hist=True)
+        
+    def dataModify(self):
+        self.number_clusters = 5
+        self.sentimentAnalysis()
+        column1 = 9
+        column2 = 10
+        self.X = self.comm.iloc[:,[column1,column2]].values
+        #print(self.X)
+
+
+    def dendrogram(self,linkage):
+        self.dataModify()
+        # using dendrogram to optimal number of clusters
+        dendrogram = sch.dendrogram(sch.linkage(self.X,linkage))
+        plt.title('Dendrogram')
+        plt.xlabel('Sentiment Value')
+        plt.ylabel('Subjectivity Value')
+        plt.axis('off')
         plt.show()
 
+      
+    def kMeansElbow(self):
+        self.dataModify()
+        # using the elbow method to find optimal number of clusters
+        wcss = []
+        for i in range(1, 11):
+           kmeans = KMeans(n_clusters = i, init = 'k-means++', max_iter=300,n_init=10,random_state=0)
+           kmeans.fit(self.X)
+           wcss.append(kmeans.inertia_)   
+        plt.plot(range(1, 11),wcss)
+        plt.title('The Elbow Method')
+        plt.xlabel('Number of Data Clusters')
+        plt.ylabel('WCSS')
+        plt.show()
 
-
-class clustering(object):
-
-   # choose columns you want to cluster from dataset when instantiating class
-   def __init__(self,column1,column2,file):
+      
+    def kMeansClustering(self):
+        self.dataModify()
+        # applying k means to the dataset
+        self.kmeans = KMeans(n_clusters = self.number_clusters, init = 'k-means++',max_iter=300,n_init=10)
+        self.y_kmeans = self.kmeans.fit_predict(self.X)
+        self.comm['clusters'] = self.y_kmeans
+        #print(self.comm)
+        self.clust1 = self.comm.loc[self.comm['clusters'] == 0]
+        self.clust2 = self.comm.loc[self.comm['clusters'] == 1]
+        self.clust3 = self.comm.loc[self.comm['clusters'] == 2]
+        self.clust4 = self.comm.loc[self.comm['clusters'] == 3]
+        self.clust5 = self.comm.loc[self.comm['clusters'] == 4]
+        #self.comm.to_csv('youTubeVideosSentimentAnalysisOutput.csv',sep=',',encoding='utf-8')
        
-       self.column1 = column1
-       self.column2 = column2
-       self.file = file
-       self.datasetNew = pd.read_csv(self.file)
-       self.X = self.datasetNew.iloc[:,[self.column1,self.column2]].values
-      
-   def dendrogram(self,linkage):
-       # using dendrogram to optimal number of clusters
-       dendrogram = sch.dendrogram(sch.linkage(self.X,linkage))
-       plt.title('Dendrogram')
-       plt.xlabel('Sentiment Value')
-       plt.ylabel('Subjectivity Value')
-       plt.show()
-      
-   def agglomViz(self,affin,link,clusters):
-       # fitting heiarchical clustering to the dataset
-       hc = AgglomerativeClustering(n_clusters = clusters, affinity = affin, linkage = link)
-       y_hc = hc.fit_predict(self.X)
-      
-       # visualizing data using agglomerative method
-       for i in range(0,clusters):
-          plt.scatter(self.X[y_hc == i, 0], self.X[y_hc == i, 1], s = 100)
-       plt.title('Clusters of Sentiment vs Subjectivity: Agglomerative Method')
-       plt.xlabel('Sentiment Value')
-       plt.ylabel('Subjectivity Value')
-       plt.legend()
-       plt.show()
-      
-   def kMeansElbow(self):
-       # using the elbow method to find optimal number of clusters
-       wcss = []
-       for i in range(1, 11):
-          kmeans = KMeans(n_clusters = i, init = 'k-means++', max_iter=300,n_init=10,random_state=0)
-          kmeans.fit(self.X)
-          wcss.append(kmeans.inertia_)   
-       plt.plot(range(1, 11),wcss)
-       plt.title('The Elbow Method')
-       plt.xlabel('Number of Data')
-       plt.ylabel('WCSS')
-       plt.show()
-      
-   def kMeansViz(self,clusterNum):
-       # applying k means to the dataset
-       kmeans = KMeans(n_clusters = clusterNum, init = 'k-means++',max_iter=300,n_init=10,random_state=0)
-       y_kmeans = kmeans.fit_predict(self.X)
-      
-       # visualizing the clusters using K-means
-       for i in range(0,clusterNum):
-          plt.scatter(self.X[y_kmeans == i, 0], self.X[y_kmeans == i, 1], s = 100)
-          plt.scatter(kmeans.cluster_centers_[:,0],kmeans.cluster_centers_[:,1],s=50,c='yellow',label='Centroids')
-       plt.title('Clusters of Sentiment vs Subjectivity: K-Means Method')
-       plt.xlabel('Sentiment Value')
-       plt.ylabel('Subjectivity Value')
-       plt.show()
+
+    def kMeansVisualizer(self):
+        self.kMeansClustering()
+        # visualizing the clusters using K-means
+        for i in range(0,self.number_clusters):
+           plt.scatter(self.X[self.y_kmeans == i, 0], self.X[self.y_kmeans == i, 1], s = 100)
+           #plt.scatter(self.kmeans.cluster_centers_[:,0],self.kmeans.cluster_centers_[:,1],s=50,c='yellow',label='Centroids')
+        plt.title('Clusters of Sentiment vs Subjectivity: K-Means Method')
+        plt.xlabel('Sentiment Value')
+        plt.ylabel('Subjectivity Value')
+        plt.legend(set(self.y_kmeans))
+        plt.show()
+
+
+    def wordCloudVisualizer(self):
+        self.kMeansClustering()
+        wordcloud = WordCloud(
+            background_color='white',
+            stopwords=stopwords.words('english'),
+            max_words=200,
+            max_font_size=40, 
+            scale=3
+            ).generate(str(self.clust3['commentText']))
+        fig = plt.figure(1, figsize=(6,6))
+        plt.title('Word cloud of chosen cluster')
+        plt.axis('off')
+        plt.imshow(wordcloud)
+        plt.show()
+       
+       
       
 
 
 url = (r'C:\Users\moose_f8sa3n2\Google Drive\Research Methods\Course Project\YouTube Data\Unicode Files\youTubeVideosUTF.csv')
 
-csv_file = 'youTubeVideosSentimentAnalysisSample.csv'
+csv_file = 'youTubeVideosSentimentAnalysisSample10000.csv'
 first_column = 10
 second_column = 11
-number_clusters = 5
 affinity = 'euclidean'
 linkage = 'ward'
 
@@ -280,37 +319,44 @@ go = textAnalytics(url)
 ##    Pool(go.wordLem())
 
 ##if __name__ == '__main__':
-##    Pool(go.wordLem())
-
-##if __name__ == '__main__':
 ##    Pool(go.stringCleaning())
 
 ##if __name__ == '__main__':
 ##    Pool(go.tagsMaker())
 
-##if __name__ == '__main__':
-##    Pool(go.sentimentAnalysis())
+#go.sentimentAnalysis()
 
 ##if __name__ == '__main__':
 ##    Pool(go.distPlotter())
 
+##if __name__ == '__main__':
+##    Pool(go.descriptiveStats())
+
+
+
+#go.distPlotter()
 go.sentimentAnalysis()
 
+
+#clust = clustering(first_column,second_column)
+
 # create the dendrogram for hierarchical method
-##hc1 = clustering(first_column,second_column,csv_file)
-##hc1.dendrogram(linkage)
+#go.dendrogram(linkage)
 
 # displays the elbow method for determining custer number
-##elbow = clustering(first_column,second_column,csv_file)
-##elbow.kMeansElbow()
-##
-### create the agglomorative hierarchical cluster
-hc2 = clustering(first_column,second_column,csv_file)
-hc2.agglomViz(affinity,linkage,number_clusters)
-##
-### create the K-Means cluster with yellow centroids
-kMeans = clustering(first_column,second_column,csv_file)
-kMeans.kMeansViz(number_clusters)
-##    
+#go.kMeansElbow()
+
+# create the K-means clusters 
+#go.kMeansClustering()
+
+# visualize the K-Means cluster with yellow centroids
+#go.kMeansVisualizer()
+
+# create a word cloud from comments
+#go.wordCloudVisualizer()
+
+##if __name__ == '__main__':
+##    Pool(clust.aprioriAlgo())
+
 
 
