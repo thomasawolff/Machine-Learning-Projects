@@ -8,6 +8,10 @@ import pandas as pd
 import seaborn as sns
 from PIL import Image
 from apyori import apriori
+import tensorflow as tf
+import tensorflow_hub as hub
+import tensorflow.compat.v1 as tf
+tf.disable_v2_behavior()
 from wordcloud import WordCloud
 from scipy.stats import pearsonr
 from scipy.stats import kurtosis
@@ -27,11 +31,6 @@ from collections import Counter
 from nltk.tokenize import word_tokenize
 from sklearn.cluster import AgglomerativeClustering
 from sklearn.feature_extraction.text import CountVectorizer
-
-import tensorflow as tf
-import tensorflow_hub as hub
-import tensorflow.compat.v1 as tf
-tf.disable_v2_behavior()
 
 
 
@@ -295,9 +294,8 @@ class textAnalytics(object):
 
     def sentenceVectorizer(self):
         embedded = []
-        file = pd.read_csv('USvideos.csv', error_bad_lines=False)
+        file = pd.read_csv('GBvideos2.csv', error_bad_lines=False)
         title = file[['video_id','title']].copy()
-        #print(title)
         embed = hub.Module(r'C:\Users\moose_f8sa3n2\Google Drive\Research Methods\Course Project\YouTube Data\Unicode Files')
         tf.logging.set_verbosity(tf.logging.ERROR)
 
@@ -306,13 +304,10 @@ class textAnalytics(object):
             message_embeddings = session.run(embed(title['title']))
 
         for i, message_embedding in enumerate(np.array(message_embeddings).tolist()):
-##           print("Message: {}".format(title['title'][i]))
-##           print("Embedding size: {}".format(len(message_embedding)))
             message_embedding_snippet = ", ".join((str(x) for x in message_embedding[:3]))
-##           print("Embedding[{},...]\n".format(message_embedding_snippet))
             embedded.append(message_embedding_snippet)
         title['embeddedValue'] = embedded
-        title.to_csv('sentencesEncoded.csv',sep=',',encoding='utf-8')
+        title.to_csv('sentencesEncoded2.csv',sep=',',encoding='utf-8')
         
       
 
