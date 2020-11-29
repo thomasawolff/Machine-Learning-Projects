@@ -60,19 +60,26 @@ def pandasAggregate():
     dataPolarity = data[['videoID','sentimentBucket']].copy()
     dataSubjectivity = data[['videoID','subjectivity']].copy()
     dataClusters = data[['videoID','clusters']].copy()
-    
+
+    # this code partitions the data by video ID and counts the number of values in the sentiment bucket column
+    # giving each row an incremented value which is then used for the pivot of the data
     dataPolarity['dataRowNumSentiment'] = dataPolarity.sort_values(['videoID','sentimentBucket'], ascending=[True,False])\
              .groupby(['videoID'])\
              .cumcount() + 1
-    
+
+    # this code partitions the data by video ID and counts the number of values in the subjectivity column
+    # giving each row an incremented value which is then used for the pivot of the data
     dataSubjectivity['dataRowNumSubjectivity'] = dataSubjectivity.sort_values(['videoID','subjectivity'], ascending=[True,False])\
              .groupby(['videoID'])\
              .cumcount() + 1
 
+    # this code partitions the data by video ID and counts the number of values in the clusters column
+    # giving each row an incremented value which is then used for the pivot of the data
     dataClusters['dataRowNumClusters'] = dataClusters.sort_values(['videoID','clusters'], ascending=[True,False])\
              .groupby(['videoID'])\
              .cumcount() + 1
 
+    # this code pivots the data using the fields created above. All values in these fields with be on one row per video ID
     sentimentPivot = dataPolarity.pivot(index='videoID', columns='dataRowNumSentiment', values='sentimentBucket')
     subjectivityPivot = dataSubjectivity.pivot(index='videoID', columns='dataRowNumSubjectivity', values='subjectivity')
     clustersPivot = dataClusters.pivot(index='videoID', columns='dataRowNumClusters', values='clusters')
