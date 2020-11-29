@@ -8,10 +8,6 @@ import pandas as pd
 import seaborn as sns
 from PIL import Image
 from apyori import apriori
-import tensorflow as tf
-import tensorflow_hub as hub
-import tensorflow.compat.v1 as tf
-tf.disable_v2_behavior()
 from wordcloud import WordCloud
 from scipy.stats import pearsonr
 from scipy.stats import kurtosis
@@ -48,7 +44,7 @@ class textAnalytics(object):
         self.review_df = self.review_df[['videoID','categoryID','views','likes','dislikes',\
                                          'commentCount','commentText','commentLikes','replies']]
         self.stopWords = stopwords.words('english')
-        self.review_df = self.review_df.sample(1000)
+        #self.review_df = self.review_df.sample(1000)
         #print(self.stopWords)
 
     def bowConverter(self):
@@ -222,6 +218,13 @@ class textAnalytics(object):
         #print(self.X)
 
 
+    def dataReturn(self):
+        #self.dataModify()
+        commOut = self.review_df[['videoID','categoryID','views']]
+        #commOut = np.log2(commOut['views'])
+        return commOut.drop_duplicates()
+
+
     def dendrogram(self,linkage):
         self.dataModify()
         # using dendrogram to optimal number of clusters
@@ -259,8 +262,9 @@ class textAnalytics(object):
         self.clust3 = self.comm.loc[self.comm['clusters'] == 2]
         self.clust4 = self.comm.loc[self.comm['clusters'] == 3]
         self.clust5 = self.comm.loc[self.comm['clusters'] == 4]
-        self.commNums = self.comm[['videoID','categoryID','views','polarity','subjectivity','sentimentBucket']].copy()
-        self.commNums.to_csv('youTubeVideosSentimentAnalysisOutput.csv',sep=',',encoding='utf-8')
+        self.commNums = self.comm[['videoID','categoryID','views','clusters','polarity','subjectivity','sentimentBucket']].copy()
+        return self.commNums
+        #self.commNums.to_csv('youTubeVideosSentimentAnalysisOutput.csv',sep=',',encoding='utf-8')
        
 
     def kMeansVisualizer(self):
@@ -291,23 +295,6 @@ class textAnalytics(object):
         plt.imshow(wordcloud)
         plt.show()
 
-
-    def sentenceVectorizer(self):
-        embedded = []
-        file = pd.read_csv('GBvideos2.csv', error_bad_lines=False)
-        title = file[['video_id','title']].copy()
-        embed = hub.Module(r'C:\Users\moose_f8sa3n2\Google Drive\Research Methods\Course Project\YouTube Data\Unicode Files')
-        tf.logging.set_verbosity(tf.logging.ERROR)
-
-        with tf.Session() as session:
-            session.run([tf.global_variables_initializer(), tf.tables_initializer()])
-            message_embeddings = session.run(embed(title['title']))
-
-        for i, message_embedding in enumerate(np.array(message_embeddings).tolist()):
-            message_embedding_snippet = ", ".join((str(x) for x in message_embedding[:3]))
-            embedded.append(message_embedding_snippet)
-        title['embeddedValue'] = embedded
-        title.to_csv('sentencesEncoded2.csv',sep=',',encoding='utf-8')
         
       
 
@@ -373,7 +360,7 @@ go = textAnalytics(url)
 # create a word cloud from comments
 #go.wordCloudVisualizer()
 
-go.sentenceVectorizer()
+#go.sentenceVectorizer()
 
 
 
