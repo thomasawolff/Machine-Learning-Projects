@@ -107,8 +107,10 @@ def dataMerge():
     merge3 = pd.merge(merge2, subject, on = 'videoID')
     merge4 = pd.merge(merge3, sentiment, on = 'videoID')
 
+    # doing log transform of the views field
     merge4['views'] = np.log2(merge4['views'])
 
+    # creating value buckets for the views field which will become a target variable for the model
     merge4.loc[merge4['views'] < 18, 'viewsBucket'] = '1'
     merge4.loc[(merge4['views'] > 18) & (merge4['views'] <= 20), 'viewsBucket'] = '2'
     merge4.loc[(merge4['views'] > 20) & (merge4['views'] <= 22), 'viewsBucket'] = '3'
@@ -150,7 +152,8 @@ def modelPredictionsSVM():
     
     X_train, X_test, y_train, y_test = train_test_split(data, data['viewsBucket'], test_size=0.2, random_state=1)
     X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size=0.25, random_state=1)
-    
+
+    # deleting the viewsBucket field from the X train, validate, and test sets
     del X_train['viewsBucket']
     del X_test['viewsBucket']
     del X_val['viewsBucket']
@@ -160,8 +163,11 @@ def modelPredictionsSVM():
     print('Singlular values of PCA model:',modelPCA.singular_values_)
     modelLR = LogisticRegression()
 
+    # performing principle components analysis to reduce the number of fields
     X_train_PCA = modelPCA.transform(X_train)
     X_val_PCA = modelPCA.transform(X_val)
+
+    # performing Logistic regression on the new PCA model
     modelLR.fit(X_train_PCA,y_train)
     predictions = modelLR.predict(X_val_PCA)
 
