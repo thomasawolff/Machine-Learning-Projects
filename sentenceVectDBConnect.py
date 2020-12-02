@@ -30,7 +30,7 @@ def sentenceVectorizer(source):
     elif source == 'data':
         df = go.dataReturn()
         data = df[['videoID','commentText']].copy()
-        title = data.sample(400)
+        title = data.sample(40000)
         column = 'commentText'
         fileName = 'sentencesEncoded_New'+str(datetime.now().strftime('%Y_%m_%d_%H_%M_%S'))+'.csv'
     else: pass
@@ -49,7 +49,7 @@ def sentenceVectorizer(source):
     title['embeddedValue'] = embedded
     title.to_csv(fileName,sep=',',encoding='utf-8')
 
-sentenceVectorizer('data')
+#sentenceVectorizer('data')
 
 
 def databaseConnection():
@@ -128,10 +128,10 @@ def dataMerge():
     merge4['views'] = np.log2(merge4['views'])
 
     # creating value buckets for the views field which will become a target variable for the model
-    merge4.loc[merge4['views'] < 20, 'viewsBucket'] = '1'
+    merge4.loc[merge4['views'] < 21, 'viewsBucket'] = '1'
     #merge4.loc[(merge4['views'] > 18) & (merge4['views'] <= 20), 'viewsBucket'] = '2'
     #merge4.loc[(merge4['views'] > 20) & (merge4['views'] <= 22), 'viewsBucket'] = '3'
-    merge4.loc[merge4['views'] > 20, 'viewsBucket'] = '2'
+    merge4.loc[merge4['views'] > 21, 'viewsBucket'] = '2'
 
     #print(round(merge4['views'].describe(include='all')),2)
     ##    25%        18.0
@@ -200,26 +200,26 @@ def modelPredictionsSVM():
 
     ##    Variance Explained by PCA model: [0.84009273 0.11403433]
     ##    Singlular values of PCA model: [285.6822093  105.25370206]
-    ##    Train Performance Logistic Regression with PCA: 0.71
-    ##    Validation Performance Logistic Regression with PCA: 0.67
+    ##    Train Performance Logistic Regression with PCA: 0.72
+    ##    Validation Performance Logistic Regression with PCA: 0.69
     ##    Confusion Matrix:
-    ##    [[125 125]
-    ##     [ 51 231]]
+    ##    [[258  74]
+    ##     [ 92 108]]
     ##    Classification Report:
     ##                  precision    recall  f1-score   support
     ##
-    ##               1       0.71      0.50      0.59       250
-    ##               2       0.65      0.82      0.72       282
+    ##               1       0.74      0.78      0.76       332
+    ##               2       0.59      0.54      0.57       200
     ##
-    ##        accuracy                           0.67       532
-    ##       macro avg       0.68      0.66      0.66       532
-    ##    weighted avg       0.68      0.67      0.66       532
+    ##        accuracy                           0.69       532
+    ##       macro avg       0.67      0.66      0.66       532
+    ##    weighted avg       0.68      0.69      0.68       532
     ##
     ##    Cross Validation scores from 8 iterations:
-    ##    [0.675   0.675   0.745    0.73   0.713   0.723  0.698   0.703]
+    ##    [0.64  0.725  0.715  0.765  0.673  0.7185  0.733  0.783]
 
 
-#modelPredictionsSVM()
+modelPredictionsSVM()
 
 
     
