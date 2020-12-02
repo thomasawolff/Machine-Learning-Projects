@@ -163,7 +163,7 @@ def dataMerge():
 
 #print(dataMerge())
 
-def modelPredictionsSVM():
+def modelPredictionsLR():
     data = dataMerge()
     
     X_train, X_test, y_train, y_test = train_test_split(data, data['viewsBucket'], test_size=0.2, random_state=1)
@@ -219,7 +219,7 @@ def modelPredictionsSVM():
     ##    [0.64  0.725  0.715  0.765  0.673  0.7185  0.733  0.783]
 
 
-modelPredictionsSVM()
+modelPredictionsLR()
 
 
     
