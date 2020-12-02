@@ -44,7 +44,7 @@ class textAnalytics(object):
         self.review_df = self.review_df[['videoID','categoryID','views','likes','dislikes',\
                                          'commentCount','commentText','commentLikes','replies']]
         self.stopWords = stopwords.words('english')
-        #self.review_df = self.review_df.sample(1000)
+        #self.review_df = self.review_df.sample(10000)
         #print(self.stopWords)
 
     def bowConverter(self):
@@ -219,10 +219,8 @@ class textAnalytics(object):
 
 
     def dataReturn(self):
-        #self.dataModify()
-        commOut = self.review_df[['videoID','categoryID','views']]
-        #commOut = np.log2(commOut['views'])
-        return commOut.drop_duplicates()
+        commOut = self.review_df[['videoID','views','categoryID','commentText']].copy()
+        return commOut
 
 
     def dendrogram(self,linkage):

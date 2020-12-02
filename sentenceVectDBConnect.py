@@ -2,6 +2,7 @@
 from textAnalytics import *
 
 import pyodbc
+from datetime import datetime
 import seaborn as sn
 from sklearn.svm import SVC
 from sklearn import svm
@@ -17,23 +18,38 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 
 
-def sentenceVectorizer():
+def sentenceVectorizer(source):
     tf.disable_v2_behavior()
     embedded = []
-    file = pd.read_csv('GBvideos2.csv', error_bad_lines=False)
-    title = file[['video_id','title']].copy()
+    
+    if source == 'file':
+        file = pd.read_csv('GBvideos2.csv', error_bad_lines=False)
+        title = file[['video_id','title']].copy()
+        column = 'title'
+        fileName = 'sentencesEncoded2.csv' 
+    elif source == 'data':
+        df = go.dataReturn()
+        data = df[['videoID','commentText']].copy()
+        title = data.sample(400)
+        column = 'commentText'
+        fileName = 'sentencesEncoded_New'+str(datetime.now().strftime('%Y_%m_%d_%H_%M_%S'))+'.csv'
+    else: pass
+        
     embed = hub.Module(r'C:\Users\moose_f8sa3n2\Google Drive\Research Methods\Course Project\YouTube Data\Unicode Files')
     tf.logging.set_verbosity(tf.logging.ERROR)
 
-    with tf.Session() as session:
+    with tf.Session() as session: #, tf.device('cpu:0'):
         session.run([tf.global_variables_initializer(), tf.tables_initializer()])
-        message_embeddings = session.run(embed(title['title']))
+        message_embeddings = session.run(embed(title[column]))
 
     for i, message_embedding in enumerate(np.array(message_embeddings).tolist()):
         message_embedding_snippet = ", ".join((str(x) for x in message_embedding[:3]))
         embedded.append(message_embedding_snippet)
+
     title['embeddedValue'] = embedded
-    title.to_csv('sentencesEncoded2.csv',sep=',',encoding='utf-8')
+    title.to_csv(fileName,sep=',',encoding='utf-8')
+
+sentenceVectorizer('data')
 
 
 def databaseConnection():
@@ -95,6 +111,7 @@ def dataMerge():
     np.seterr(divide = 'ignore') 
     df = go.dataReturn()
     df = pd.DataFrame(df)
+    df = df[['videoID','views','categoryID']].drop_duplicates()
     df = df.set_index('videoID')
     
     encoded = pd.read_csv('sentencesEncoded2.csv')
@@ -111,10 +128,10 @@ def dataMerge():
     merge4['views'] = np.log2(merge4['views'])
 
     # creating value buckets for the views field which will become a target variable for the model
-    merge4.loc[merge4['views'] < 18, 'viewsBucket'] = '1'
-    merge4.loc[(merge4['views'] > 18) & (merge4['views'] <= 20), 'viewsBucket'] = '2'
-    merge4.loc[(merge4['views'] > 20) & (merge4['views'] <= 22), 'viewsBucket'] = '3'
-    merge4.loc[merge4['views'] > 22, 'viewsBucket'] = '4'
+    merge4.loc[merge4['views'] < 20, 'viewsBucket'] = '1'
+    #merge4.loc[(merge4['views'] > 18) & (merge4['views'] <= 20), 'viewsBucket'] = '2'
+    #merge4.loc[(merge4['views'] > 20) & (merge4['views'] <= 22), 'viewsBucket'] = '3'
+    merge4.loc[merge4['views'] > 20, 'viewsBucket'] = '2'
 
     #print(round(merge4['views'].describe(include='all')),2)
     ##    25%        18.0
@@ -125,7 +142,7 @@ def dataMerge():
     
     merge4 = merge4.set_index('videoID')
     del merge4['views']
-    #merge4.to_csv('dataCombined.csv')
+    merge4.to_csv('dataCombined.csv')
     
     return merge4
 
@@ -144,8 +161,7 @@ def dataMerge():
     ##
     ##    [2661 rows x 69 columns]
 
-#dataMerge()
-
+#print(dataMerge())
 
 def modelPredictionsSVM():
     data = dataMerge()
@@ -209,7 +225,7 @@ def modelPredictionsSVM():
     ##    [0.43  0.47  0.405  0.385  0.462  0.407  0.376  0.432]
 
 
-modelPredictionsSVM()
+#modelPredictionsSVM()
 
 
     
