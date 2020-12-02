@@ -200,29 +200,23 @@ def modelPredictionsSVM():
 
     ##    Variance Explained by PCA model: [0.84009273 0.11403433]
     ##    Singlular values of PCA model: [285.6822093  105.25370206]
-    ##    Train Performance Logistic Regression with PCA: 0.42
-    ##    Validation Performance Logistic Regression with PCA: 0.39
-    ##
+    ##    Train Performance Logistic Regression with PCA: 0.71
+    ##    Validation Performance Logistic Regression with PCA: 0.67
     ##    Confusion Matrix:
-    ##    [[33 37 29  7]
-    ##     [21 30 66 27]
-    ##     [15 23 65 51]
-    ##     [ 6  6 39 77]]
-    ##
+    ##    [[125 125]
+    ##     [ 51 231]]
     ##    Classification Report:
     ##                  precision    recall  f1-score   support
     ##
-    ##               1       0.44      0.31      0.36       106
-    ##               2       0.31      0.21      0.25       144
-    ##               3       0.33      0.42      0.37       154
-    ##               4       0.48      0.60      0.53       128
+    ##               1       0.71      0.50      0.59       250
+    ##               2       0.65      0.82      0.72       282
     ##
-    ##        accuracy                           0.39       532
-    ##       macro avg       0.39      0.39      0.38       532
-    ##    weighted avg       0.38      0.39      0.37       532
+    ##        accuracy                           0.67       532
+    ##       macro avg       0.68      0.66      0.66       532
+    ##    weighted avg       0.68      0.67      0.66       532
     ##
     ##    Cross Validation scores from 8 iterations:
-    ##    [0.43  0.47  0.405  0.385  0.462  0.407  0.376  0.432]
+    ##    [0.675   0.675   0.745    0.73   0.713   0.723  0.698   0.703]
 
 
 #modelPredictionsSVM()
