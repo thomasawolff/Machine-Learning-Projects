@@ -56,7 +56,7 @@ class dataSetupRun(object):
         self.denseActivationFunc = 'relu' # activation function used with in dense layers
         self.predsActivationFunc = 'softmax' # activation function used to measure loss
         self.optimizerFunc = 'adagrad' # optimizer for backpropagation
-        self.classMode = 'categorical' # the kind of machine learning to be done
+        self.classMode = 'categorical' # there are 21 class labels so this is not binary
         self.batch_size = 20 # the number of images included processed at once for classification
         self.img_height = 224
         self.img_width = 224
@@ -64,7 +64,6 @@ class dataSetupRun(object):
         self.labelNumber = 21
         self.total_val = 567
         self.dropout = 0.5
-        self.valSplit = 0.25 # 25% of training images will be used for validation
         self.epochs = 30 # the number of iterations through training set
         self.bands = 3 # color image has 3 color bands, red, green, blue
 
