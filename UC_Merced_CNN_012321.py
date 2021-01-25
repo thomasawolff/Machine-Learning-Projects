@@ -109,14 +109,13 @@ class dataSetupRun(object):
 
         # 50% of dense layers nodes will be removed
         dropout1 = Dropout(self.dropout) # dropout randomly removes nodes from the CNN each iteration
-        dropout2 = Dropout(self.dropout) # this prevents overfitting to training data by
-        dropout3 = Dropout(self.dropout) # forcing the algorithm to find different paths across dense layers each iteration
+        dropout2 = Dropout(self.dropout) # this prevents overfitting to training data
 
         # assigning the pre-trained model MobileNet to the variable base_model
         base_model=MobileNet(input_shape=(self.img_height,self.img_width,self.bands),\
                              weights=self.preTrainedModel,include_top=False)
 
-        denseLayers = base_model.output # brining in the output from the base_model into dense layers
+        denseLayers = base_model.output # bringing in the output from the base_model into dense layers
         denseLayers = GlobalAveragePooling2D()(denseLayers) # performing pooling function
         denseLayers = Dense(1024,activation = self.denseActivationFunc)(denseLayers) #dense layer 1
         denseLayers = dropout2(denseLayers)
