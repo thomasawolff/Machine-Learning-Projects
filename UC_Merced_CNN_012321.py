@@ -80,9 +80,6 @@ class dataSetupRun(object):
                                    horizontal_flip=True, fill_mode='nearest')
 
 
-        # test image generator. these images are not modified.
-        test_image_generator = ImageDataGenerator(rescale=1./255)
-
         # generating the training images and converting them into data usable by the classification algorithm
         self.train_data_gen = image_generator.flow_from_directory(batch_size=self.batch_size,
                                                         directory=train_dir,
