@@ -62,7 +62,6 @@ class dataSetupRun(object):
         self.img_width = 224
         self.total_train = 1533
         self.labelNumber = 21
-        self.total_val = 567
         self.dropout = 0.5
         self.epochs = 30 # the number of iterations through training set
         self.bands = 3 # color image has 3 color bands, red, green, blue
