@@ -121,9 +121,9 @@ class dataSetupRun(object):
         denseLayers = Dense(1024,activation = self.denseActivationFunc)(denseLayers) #dense layer 1
         denseLayers = dropout2(denseLayers)
         denseLayers = Dense(512,activation = self.denseActivationFunc)(denseLayers) #dense layer 3
+        denseLayers = Flatten()(denseLayers)
 
         preds = Dense(self.labelNumber,activation = self.predsActivationFunc)(denseLayers) #final dense layer with softmax activation
-        denseLayers = Flatten()(denseLayers)
 
         modeler = Model(inputs=base_model.input, outputs=preds)
         self.model = multi_gpu_model(modeler, gpus=2)
