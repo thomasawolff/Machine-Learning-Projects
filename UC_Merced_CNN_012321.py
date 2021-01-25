@@ -42,10 +42,8 @@ tensorboard = TensorBoard(log_dir=home+'\\logs\\{}'.format(name),
 path = (r'E:\\DeepLearningImages\\UC_Merced\\extracted\\UCMerced_LandUse')
 train_dir = os.path.join(path, 'trainImages')
 test_dir = os.path.join(path, 'testImages')
-val_dir = os.path.join(path, 'validationImages')
 train_dir = pathlib.Path(train_dir)
 test_dir = pathlib.Path(test_dir)
-val_dir = pathlib.Path(val_dir)
 test_image_count = len(list(test_dir.glob('*/*.tif')))
 
 
@@ -82,8 +80,6 @@ class dataSetupRun(object):
                                    width_shift_range=0.2, height_shift_range=0.2, shear_range=0.2,
                                    horizontal_flip=True, fill_mode='nearest')
 
-        # validation image generator. these images are not modified.
-        val_image_generator = ImageDataGenerator(rescale=1./255)
 
         # test image generator. these images are not modified.
         test_image_generator = ImageDataGenerator(rescale=1./255)
