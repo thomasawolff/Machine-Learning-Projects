@@ -36,7 +36,7 @@ tensorboard = TensorBoard(log_dir=home+'\\logs\\{}'.format(name),
                           write_images=True)
 
 
-############## This model uses tensorflow-GPU 1.4 #################
+############## This model uses tensorflow-GPU 2.0.0 #################
 
 #path = (r'https://drive.google.com/drive/folders/1LS7mECdPTtcCmSUcOVKMOnsCndwHx-Dh')
 path = (r'E:\\DeepLearningImages\\UC_Merced\\extracted\\UCMerced_LandUse')
