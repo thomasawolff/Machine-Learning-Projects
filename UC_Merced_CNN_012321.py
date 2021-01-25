@@ -36,12 +36,13 @@ tensorboard = TensorBoard(log_dir=home+'\\logs\\{}'.format(name),
                           write_images=True)
 
 
-############## This model uses tensorflow-GPU 2.0.0 #################
+############## This model uses tensorflow-GPU 1.4 #################
 
 #path = (r'https://drive.google.com/drive/folders/1LS7mECdPTtcCmSUcOVKMOnsCndwHx-Dh')
 path = (r'E:\\DeepLearningImages\\UC_Merced\\extracted\\UCMerced_LandUse')
 train_dir = os.path.join(path, 'trainImages')
 test_dir = os.path.join(path, 'testImages')
+val_dir = os.path.join(path, 'validationImages')
 train_dir = pathlib.Path(train_dir)
 test_dir = pathlib.Path(test_dir)
 test_image_count = len(list(test_dir.glob('*/*.tif')))
@@ -109,13 +110,13 @@ class dataSetupRun(object):
 
         # 50% of dense layers nodes will be removed
         dropout1 = Dropout(self.dropout) # dropout randomly removes nodes from the CNN each iteration
-        dropout2 = Dropout(self.dropout) # this prevents overfitting to training data
+        dropout2 = Dropout(self.dropout) # this prevents overfitting to training data by
 
         # assigning the pre-trained model MobileNet to the variable base_model
         base_model=MobileNet(input_shape=(self.img_height,self.img_width,self.bands),\
                              weights=self.preTrainedModel,include_top=False)
 
-        denseLayers = base_model.output # bringing in the output from the base_model into dense layers
+        denseLayers = base_model.output # brining in the output from the base_model into dense layers
         denseLayers = GlobalAveragePooling2D()(denseLayers) # performing pooling function
         denseLayers = Dense(1024,activation = self.denseActivationFunc)(denseLayers) #dense layer 1
         denseLayers = dropout2(denseLayers)
@@ -156,7 +157,7 @@ class dataSetupRun(object):
         losses[['loss','val_loss']].plot()
         plt.show()
         
-        self.model.save('savedClassModel.h5')
+        #self.model.save('savedClassModel.h5')
 
 
     def testDataPredictionsWrite(self):
