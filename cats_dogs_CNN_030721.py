@@ -169,9 +169,9 @@ class dataSetupRun(object):
                       loss=CategoricalCrossentropy(from_logits=True),
                       metrics=['accuracy'])
 
-        return self.model
-
         #self.model.summary()
+        
+        return self.model
 
 
 
