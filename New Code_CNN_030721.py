@@ -28,11 +28,10 @@ from keras.applications.mobilenet import preprocess_input
 from tensorflow.keras.layers import Dense, Conv2D, Flatten, Dropout, MaxPool2D
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 
-##gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.5)
-##sess = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options))
+
 
 path = r'E:\DeepLearningImages\Deep Learning Code and Images'
-name = 'CatsDogsPredict-cnn-64x2-{}'.format(time.time())
+name = 'LandUsePredict-cnn-64x2-{}'.format(time.time())
 tensorboard = TensorBoard(log_dir=path+'\\logs\\{}'.format(name),
                           histogram_freq=1,
                           write_images=True)
@@ -41,14 +40,13 @@ tensorboard = TensorBoard(log_dir=path+'\\logs\\{}'.format(name),
 ############## This model uses tensorflow-GPU 2.3.0 #################
 
 #path = (r'https://drive.google.com/drive/folders/1LS7mECdPTtcCmSUcOVKMOnsCndwHx-Dh')
-train_dir = os.path.join(path, 'trainPlants')
-val_dir = os.path.join(path, 'validationPlants')
-test_dir = os.path.join(path, 'testPlants')
+train_dir = os.path.join(path, 'train')
+val_dir = os.path.join(path, 'validation')
+test_dir = os.path.join(path, 'test')
 train_dir = pathlib.Path(train_dir)
 val_dir = pathlib.Path(val_dir)
 test_dir = pathlib.Path(test_dir)
 test_image_count = len(list(test_dir.glob('*/*.tif')))
-
 
 
 def imageDimensions():
@@ -82,18 +80,18 @@ class dataSetupRun(object):
         self.predsActivationFunc = 'softmax' # activation function used to measure loss
         self.optimizerFunc = 'adagrad' # optimizer for backpropagation
         self.classMode = 'categorical' # the kind of machine learning to be done
-        self.batch_size = 2 # the number of images included processed at once for classification
-        self.img_height = 500 #imageDimensions()[0]  #imageDimensions()[0]
-        self.img_width = 500 #imageDimensions()[0]   #imageDimensions()[0]
-        self.total_train = 2234
-        self.total_val = 1129
-        self.labelNumber = 12
+        self.batch_size = 8 # the number of images included processed at once for classification
+        self.img_height = 224 #imageDimensions()[0]  #imageDimensions()[0]
+        self.img_width = 224 #imageDimensions()[0]   #imageDimensions()[0]
+        self.total_train = 1407
+        self.total_val = 126
+        self.labelNumber = 21
         self.architecture = ResNet152
-        self.epochs = 1000 # the number of iterations through training set
+        self.epochs = 2000 # the number of iterations through training set
         self.bands = 3 # color image has 3 color bands, red, green, blue
 
 
-    
+    @tf.function(experimental_compile=True)
     def arrangeData(self):
 
         # training image generator. in this generator I am modifying the training images each iteration
@@ -138,7 +136,7 @@ class dataSetupRun(object):
                                                         #save_format = 'jpeg')
 
 
-
+    
     def modelSetupRun(self):
         self.arrangeData()
 
@@ -147,49 +145,35 @@ class dataSetupRun(object):
                              weights=self.preTrainedModel,include_top=False)
 
         denseLayers = base_model.output # brining in the output from the base_model into dense layers
-        denseLayers = GlobalAveragePooling2D()(denseLayers) # performing pooling function
         denseLayers = Flatten()(denseLayers)
 
         preds = Dense(self.labelNumber,activation = self.predsActivationFunc)(denseLayers) #final dense layer with softmax activation
-
-        self.model = Model(inputs=base_model.input, outputs=preds)
 
         #self.model.trainable = False # setting the pretrained model to be trainable
         for layer in base_model.layers:
             layer.trainable = True
 
         pd.set_option('max_colwidth', None)
-        layers = [(layer, layer.name, layer.trainable) for layer in self.model.layers]
+        layers = [(layer, layer.name, layer.trainable) for layer in base_model.layers]
         print(pd.DataFrame(layers, columns=['Layer Type', 'Layer Name', 'Layer Trainable']))
-        
 
+
+        self.model = Model(inputs=base_model.input, outputs=preds)
         self.model.compile(optimizer=self.optimizerFunc, # compiling the model using adagrad optimizer
                       loss=CategoricalCrossentropy(from_logits=True),
                       metrics=['accuracy'])
 
-        
-        #self.model.summary()
+        #model.summary()
         return self.model
 
 
     def runTrainCompile(self):
-        #self.arrangeData()
-        # Create a MirroredStrategy.
-        strategy = tf.distribute.MirroredStrategy(["GPU:0"])
-        print("Number of devices: {}".format(strategy.num_replicas_in_sync))
-        #print(tf.python.client.device_lib.list_local_devices())
-
-        # Open a strategy scope.
-        with strategy.scope():
-            # Everything that creates variables should be under the strategy scope.
-            # In general this is only model construction & `compile()`.
-            model = self.modelSetupRun()
-
+        self.modelSetupRun()
         early_stop = EarlyStopping(monitor='val_loss',patience=2)
-
-         # training the model and doing initial evalution using validation data
-
-        self.history = model.fit(
+        
+        # training the model and doing initial evalution using validation data
+        
+        self.history = self.model.fit(
             self.train_data_gen,
             steps_per_epoch=self.total_train // self.batch_size,
             epochs=self.epochs,
@@ -197,7 +181,8 @@ class dataSetupRun(object):
             validation_steps=self.total_val // self.batch_size,
             callbacks = [tensorboard,early_stop]
             )
-        
+
+        self.model.save(r'E:\DeepLearningImages\Deep Learning Code and Images\savedClassModel.h5')
         losses = pd.DataFrame(self.model.history.history)
         losses[['loss','val_loss']].plot()
         plt.show()
@@ -205,9 +190,11 @@ class dataSetupRun(object):
 
 
     def testDataPredictionsWrite(self):
-        self.runTrainCompile()
-        loss = self.model.evaluate(self.test_data_gen)
-        predict = self.model.predict(self.test_data_gen)
+        self.arrangeData()
+        savedModel = tf.keras.models.load_model('savedClassModel.h5')
+        
+        loss = savedModel.evaluate(self.test_data_gen)
+        predict = savedModel.predict(self.test_data_gen)
         predicted_class_indices=np.argmax(predict,axis=1)
 
         labels = (self.test_data_gen.class_indices)
@@ -219,7 +206,6 @@ class dataSetupRun(object):
         print(results)
 
         results.to_csv('CNN_Results_Output.csv', sep='\t')
-        #self.model.save('savedClassModel.h5')
 
 
 
