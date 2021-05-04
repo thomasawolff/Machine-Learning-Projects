@@ -89,6 +89,12 @@ class dataSetupRun(object):
         self.architecture = ResNet152
         self.epochs = 2000 # the number of iterations through training set
         self.bands = 3 # color image has 3 color bands, red, green, blue
+        self.labels = ['agricultural','airplane','baseballdiamond','beach',
+                       'buildings','chaperral','denseresidential','forest','freeway',
+                       'golfcourse','harbor','intersection','mediumresidential',
+                       'mobilehomepark','overpass','parkinglot','river','runway',
+                       'sparseresidential','storagetanks','tenniscourt']
+
 
 
     @tf.function(experimental_compile=True)
@@ -167,6 +173,7 @@ class dataSetupRun(object):
         return self.model
 
 
+
     def runTrainCompile(self):
         self.modelSetupRun()
         early_stop = EarlyStopping(monitor='val_loss',patience=2)
@@ -179,33 +186,13 @@ class dataSetupRun(object):
             epochs=self.epochs,
             validation_data=self.validation_data_gen,
             validation_steps=self.total_val // self.batch_size,
-            callbacks = [tensorboard,early_stop]
+            callbacks = [tensorboard, early_stop]
             )
 
         self.model.save(r'E:\DeepLearningImages\Deep Learning Code and Images\savedClassModel.h5')
         losses = pd.DataFrame(self.model.history.history)
         losses[['loss','val_loss']].plot()
         plt.show()
-    
-
-
-    def testDataPredictionsWrite(self):
-        self.arrangeData()
-        savedModel = tf.keras.models.load_model('savedClassModel.h5')
-        
-        loss = savedModel.evaluate(self.test_data_gen)
-        predict = savedModel.predict(self.test_data_gen)
-        predicted_class_indices=np.argmax(predict,axis=1)
-
-        labels = (self.test_data_gen.class_indices)
-        labels = dict((v,k) for k,v in labels.items())
-        self.predictions = [labels[k] for k in predicted_class_indices]
-
-        self.filenames=self.test_data_gen.filenames
-        results=pd.DataFrame({'Filename':self.filenames,'Predictions':self.predictions})
-        print(results)
-
-        results.to_csv('CNN_Results_Output.csv', sep='\t')
 
 
 
@@ -236,6 +223,50 @@ class dataSetupRun(object):
         plt.legend(loc='upper right')
         plt.title('Training and Validation Loss')
         plt.show()
+    
+
+
+
+    def testDataPredictionsProbs(self):
+        probs = []
+        index_ = 17
+        self.arrangeData()
+        savedModel = tf.keras.models.load_model('savedClassModel.h5')
+        
+        #loss = savedModel.evaluate(self.test_data_gen[index_])
+        predict = savedModel.predict(self.test_data_gen[index_])
+
+        for i in range(21):
+            probs.append(predict[index_][i])
+
+        plt.figure(figsize=(15,10))
+        plt.tight_layout()
+        plt.bar(self.labels,probs,data=probs,log=True)
+        plt.xticks(rotation=90)
+        plt.ylabel('Log Probabilities')
+        plt.title('Class prediction probabilities')
+        plt.show()
+
+
+
+
+    def testDataPredictionsWrite(self):
+        self.arrangeData()
+        savedModel = tf.keras.models.load_model('savedClassModel.h5')
+        
+        loss = savedModel.evaluate(self.test_data_gen[index_])
+        predict = savedModel.predict(self.test_data_gen[index_])
+        
+        labels = (self.test_data_gen.class_indices)
+        labels = dict((v,k) for k,v in labels.items())
+        self.predictions = [labels[k] for k in predicted_class_indices]
+
+        self.filenames=self.test_data_gen.filenames
+        results=pd.DataFrame({'Filename':self.filenames,'Predictions':self.predictions})
+        print(results)
+
+        results.to_csv('CNN_Results_Output.csv', sep='\t')
+
 
         
 
@@ -244,7 +275,8 @@ class dataSetupRun(object):
 go = dataSetupRun()
 #go.modelSetupRun()
 #go.runTrainCompile()
-go.testDataPredictionsWrite()
+go.testDataPredictionsProbs()
+#go.testDataPredictionsWrite()
 #go.performanceViz()
 
 
