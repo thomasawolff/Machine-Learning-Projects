@@ -46,7 +46,11 @@ test_dir = os.path.join(path, 'test')
 train_dir = pathlib.Path(train_dir)
 val_dir = pathlib.Path(val_dir)
 test_dir = pathlib.Path(test_dir)
-test_image_count = len(list(test_dir.glob('*/*.tif')))
+
+##train_image_count = len(list(train_dir.glob('*/*.tif')))
+##val_image_count = len(list(val_dir.glob('*/*.tif')))
+##test_image_count = len(list(test_dir.glob('*/*.tif')))
+
 
 
 def imageDimensions():
@@ -69,6 +73,7 @@ def imageDimensions():
     #plt.show()
     return int(np.mean(dim1)),int(np.mean(dim2))
 
+print(imageDimensions()[0])
 
 
 class dataSetupRun(object):
@@ -81,19 +86,19 @@ class dataSetupRun(object):
         self.optimizerFunc = 'adagrad' # optimizer for backpropagation
         self.classMode = 'categorical' # the kind of machine learning to be done
         self.batch_size = 8 # the number of images included processed at once for classification
-        self.img_height = 224 #imageDimensions()[0]  #imageDimensions()[0]
-        self.img_width = 224 #imageDimensions()[0]   #imageDimensions()[0]
-        self.total_train = 1407
-        self.total_val = 126
-        self.labelNumber = 21
+        self.img_height = 224 #imageDimensions()[0]  
+        self.img_width = 224 #imageDimensions()[0]
+        self.total_train = len(list(train_dir.glob('*/*.tif')))
+        self.total_val = len(list(val_dir.glob('*/*.tif')))
         self.architecture = ResNet152
         self.epochs = 2000 # the number of iterations through training set
         self.bands = 3 # color image has 3 color bands, red, green, blue
-        self.labels = ['agricultural','airplane','baseballdiamond','beach',
-                       'buildings','chaperral','denseresidential','forest','freeway',
-                       'golfcourse','harbor','intersection','mediumresidential',
-                       'mobilehomepark','overpass','parkinglot','river','runway',
-                       'sparseresidential','storagetanks','tenniscourt']
+        
+##        self.labels = ['agricultural','airplane','baseballdiamond','beach',
+##                       'buildings','chaperral','denseresidential','forest','freeway',
+##                       'golfcourse','harbor','intersection','mediumresidential',
+##                       'mobilehomepark','overpass','parkinglot','river','runway',
+##                       'sparseresidential','storagetanks','tenniscourt']
 
 
 
@@ -146,6 +151,10 @@ class dataSetupRun(object):
     def modelSetupRun(self):
         self.arrangeData()
 
+        # getting the number of labels in image data
+        labels = (self.train_data_gen.class_indices)
+        labels = dict((v,k) for k,v in labels.items())
+
         # assigning the pre-trained model MobileNet to the variable base_model
         base_model=self.architecture(input_shape=(self.img_height,self.img_width,self.bands),\
                              weights=self.preTrainedModel,include_top=False)
@@ -153,7 +162,7 @@ class dataSetupRun(object):
         denseLayers = base_model.output # brining in the output from the base_model into dense layers
         denseLayers = Flatten()(denseLayers)
 
-        preds = Dense(self.labelNumber,activation = self.predsActivationFunc)(denseLayers) #final dense layer with softmax activation
+        preds = Dense(len(labels),activation = self.predsActivationFunc)(denseLayers) #final dense layer with softmax activation
 
         #self.model.trainable = False # setting the pretrained model to be trainable
         for layer in base_model.layers:
@@ -189,7 +198,7 @@ class dataSetupRun(object):
             callbacks = [tensorboard, early_stop]
             )
 
-        self.model.save(r'E:\DeepLearningImages\Deep Learning Code and Images\savedClassModel.h5')
+        #self.model.save(r'E:\DeepLearningImages\Deep Learning Code and Images\savedClassModel.h5')
         losses = pd.DataFrame(self.model.history.history)
         losses[['loss','val_loss']].plot()
         plt.show()
@@ -229,19 +238,21 @@ class dataSetupRun(object):
 
     def testDataPredictionsProbs(self):
         probs = []
-        index_ = 17
+        index_ = 12
         self.arrangeData()
         savedModel = tf.keras.models.load_model('savedClassModel.h5')
         
         #loss = savedModel.evaluate(self.test_data_gen[index_])
         predict = savedModel.predict(self.test_data_gen[index_])
+        labels = (self.test_data_gen.class_indices)
+        labels = dict((v,k) for k,v in labels.items())
 
-        for i in range(21):
+        for i in range(len(labels)):
             probs.append(predict[index_][i])
 
         plt.figure(figsize=(15,10))
         plt.tight_layout()
-        plt.bar(self.labels,probs,data=probs,log=True)
+        plt.bar(labels.values(),probs,data=probs,log=True)
         plt.xticks(rotation=90)
         plt.ylabel('Log Probabilities')
         plt.title('Class prediction probabilities')
@@ -273,6 +284,7 @@ class dataSetupRun(object):
         
 #print(imageDimensions())
 go = dataSetupRun()
+#go.arrangeData()
 #go.modelSetupRun()
 #go.runTrainCompile()
 go.testDataPredictionsProbs()
