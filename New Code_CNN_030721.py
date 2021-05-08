@@ -240,6 +240,7 @@ class dataSetupRun(object):
 
     def testDataPredictionsProbs(self,index_):
         preds = []
+        labelsList = []
         self.arrangeData()
         savedModel = tf.keras.models.load_model('savedClassModel.h5')
         
@@ -260,13 +261,15 @@ class dataSetupRun(object):
 
         print(preds[index_])
         print(predict[index_])
+        my_cmap = plt.get_cmap('tab20c')
 
         plt.figure(figsize=(15,10))
         plt.tight_layout()
-        plt.bar(labels.values(),predict[index_],data=predict[index_],log=True)
-        plt.xticks(rotation=90)
+        plot = plt.bar(labels.values(),predict[index_],data=predict[index_],log=True,color=my_cmap.colors)
+        plt.xticks([])
         plt.ylabel('Log Probabilities')
-        plt.title('Class prediction probabilities')
+        plt.title('Class prediction probabilities: '+str(preds[index_]))
+        plt.legend(plot,[i for i in labels.values()],loc="upper left")
         plt.show()
 
 
@@ -299,7 +302,7 @@ go = dataSetupRun()
 #go.arrangeData()
 #go.modelSetupRun()
 #go.runTrainCompile()
-go.testDataPredictionsProbs(300)
+go.testDataPredictionsProbs(356)
 #go.testDataPredictionsWrite()
 #go.performanceViz()
 
