@@ -5,6 +5,7 @@ import csv
 import glob
 import time 
 import pathlib
+import joblib
 import pandas as pd
 import numpy as np
 import tensorflow as tf
@@ -191,17 +192,18 @@ class dataSetupRun(object):
         
         self.history = self.model.fit(
             self.train_data_gen,
-            steps_per_epoch=self.total_train // self.batch_size,
+            #steps_per_epoch=self.total_train // self.batch_size,
             epochs=self.epochs,
             validation_data=self.validation_data_gen,
-            validation_steps=self.total_val // self.batch_size,
+            #validation_steps=self.total_val // self.batch_size,
             callbacks = [tensorboard, early_stop]
             )
 
-        #self.model.save(r'E:\DeepLearningImages\Deep Learning Code and Images\savedClassModel.h5')
+        self.model.save(r'E:\DeepLearningImages\Deep Learning Code and Images\savedClassModel.h5')
         losses = pd.DataFrame(self.model.history.history)
         losses[['loss','val_loss']].plot()
         plt.show()
+        #joblib.dump(self.test_data_gen,'image_scaler.pkl')
 
 
 
@@ -236,23 +238,32 @@ class dataSetupRun(object):
 
 
 
-    def testDataPredictionsProbs(self):
-        probs = []
-        index_ = 12
+    def testDataPredictionsProbs(self,index_):
+        preds = []
         self.arrangeData()
         savedModel = tf.keras.models.load_model('savedClassModel.h5')
         
         #loss = savedModel.evaluate(self.test_data_gen[index_])
-        predict = savedModel.predict(self.test_data_gen[index_])
+        predict = savedModel.predict(self.test_data_gen)
         labels = (self.test_data_gen.class_indices)
         labels = dict((v,k) for k,v in labels.items())
+        predicted_class_indices=np.argmax(predict,axis=1)
+        self.predictions = [labels[k] for k in predicted_class_indices]
+        self.filenames=self.test_data_gen.filenames
+        
+        #print(self.predictions[index_])
+        #print(self.filenames[index_])
 
-        for i in range(len(labels)):
-            probs.append(predict[index_][i])
+        labelsPredDict = dict(zip(self.filenames,self.predictions))
+        for key,value in labelsPredDict.items() :
+            preds.append([key,value])
+
+        print(preds[index_])
+        print(predict[index_])
 
         plt.figure(figsize=(15,10))
         plt.tight_layout()
-        plt.bar(labels.values(),probs,data=probs,log=True)
+        plt.bar(labels.values(),predict[index_],data=predict[index_],log=True)
         plt.xticks(rotation=90)
         plt.ylabel('Log Probabilities')
         plt.title('Class prediction probabilities')
@@ -265,8 +276,9 @@ class dataSetupRun(object):
         self.arrangeData()
         savedModel = tf.keras.models.load_model('savedClassModel.h5')
         
-        loss = savedModel.evaluate(self.test_data_gen[index_])
-        predict = savedModel.predict(self.test_data_gen[index_])
+        loss = savedModel.evaluate(self.test_data_gen)
+        predict = savedModel.predict(self.test_data_gen)
+        predicted_class_indices=np.argmax(predict,axis=1)
         
         labels = (self.test_data_gen.class_indices)
         labels = dict((v,k) for k,v in labels.items())
@@ -287,7 +299,7 @@ go = dataSetupRun()
 #go.arrangeData()
 #go.modelSetupRun()
 #go.runTrainCompile()
-go.testDataPredictionsProbs()
+go.testDataPredictionsProbs(300)
 #go.testDataPredictionsWrite()
 #go.performanceViz()
 
