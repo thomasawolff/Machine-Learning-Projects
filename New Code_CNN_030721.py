@@ -5,14 +5,14 @@ import csv
 import glob
 import time 
 import pathlib
-import joblib
 import pandas as pd
 import numpy as np
 import tensorflow as tf
 import seaborn as sns
 import matplotlib.pyplot as plt
 from tensorflow import compat
-from matplotlib.image import imread
+from keras.preprocessing import image
+import matplotlib.image as mpimg
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.applications import Xception
 from tensorflow.keras.utils import multi_gpu_model
@@ -74,7 +74,7 @@ def imageDimensions():
     #plt.show()
     return int(np.mean(dim1)),int(np.mean(dim2))
 
-print(imageDimensions()[0])
+#print(imageDimensions()[0])
 
 
 class dataSetupRun(object):
@@ -203,7 +203,6 @@ class dataSetupRun(object):
         losses = pd.DataFrame(self.model.history.history)
         losses[['loss','val_loss']].plot()
         plt.show()
-        #joblib.dump(self.test_data_gen,'image_scaler.pkl')
 
 
 
@@ -244,21 +243,18 @@ class dataSetupRun(object):
         self.arrangeData()
         savedModel = tf.keras.models.load_model('savedClassModel.h5')
         
-        #loss = savedModel.evaluate(self.test_data_gen[index_])
+        loss,acc = savedModel.evaluate(self.test_data_gen)
         predict = savedModel.predict(self.test_data_gen)
         labels = (self.test_data_gen.class_indices)
         labels = dict((v,k) for k,v in labels.items())
         predicted_class_indices=np.argmax(predict,axis=1)
         self.predictions = [labels[k] for k in predicted_class_indices]
         self.filenames=self.test_data_gen.filenames
-        
-        #print(self.predictions[index_])
-        #print(self.filenames[index_])
 
         labelsPredDict = dict(zip(self.filenames,self.predictions))
         for key,value in labelsPredDict.items() :
             preds.append([key,value])
-
+            
         print(preds[index_])
         print(predict[index_])
         my_cmap = plt.get_cmap('tab20c')
@@ -294,17 +290,72 @@ class dataSetupRun(object):
         results.to_csv('CNN_Results_Output.csv', sep='\t')
 
 
-        
-
+    
         
 #print(imageDimensions())
-go = dataSetupRun()
+#go = dataSetupRun()
 #go.arrangeData()
 #go.modelSetupRun()
 #go.runTrainCompile()
-go.testDataPredictionsProbs(356)
+#go.testDataPredictionsProbs(356)
 #go.testDataPredictionsWrite()
 #go.performanceViz()
+
+
+
+def prodImagesOnSavedModel(path,directory,image):
+    preds = []
+    labelsList = []
+    plt.ion()
+    
+    prod_dir = os.path.join(path,directory)
+    prod_dir = pathlib.Path(prod_dir)
+    prod_image_count = len(list(prod_dir.glob('*/*.tif')))
+
+    prod_Image_generator = ImageDataGenerator(rescale=1./255)
+    prod_data_gen = prod_Image_generator.flow_from_directory(directory=prod_dir,
+                                                            color_mode="rgb",
+                                                            target_size=(224,224),
+                                                            class_mode='categorical',
+                                                            shuffle=False)
+
+    savedModel = tf.keras.models.load_model('savedClassModel.h5')
+    labels = (prod_data_gen.class_indices)
+    labels = dict((v,k) for k,v in labels.items())
+    predict = savedModel.predict(prod_data_gen)
+    predicted_class_indices=np.argmax(predict,axis=1)
+    predictions = [labels[k] for k in predicted_class_indices]
+    filenames = prod_data_gen.filenames
+    index_ = filenames.index(image)
+
+    labelsPredDict = dict(zip(filenames,predictions))
+    
+    for key,value in labelsPredDict.items() :
+        preds.append([key,value])
+        
+    print(preds[index_])
+    print(predict[index_])
+    my_cmap = plt.get_cmap('tab20c')
+
+    plt.figure(figsize=(18, 9))
+    plt.subplot(1, 2, 1)
+    img = mpimg.imread(str(prod_dir)+'\\'+str(image))
+    plt.imshow(img)
+
+    plt.subplot(1, 2, 2)
+    plot = plt.bar(labels.values(),predict[index_],data=predict[index_],log=True,color=my_cmap.colors)
+    plt.xticks([])
+    plt.ylabel('Log Probabilities')
+    plt.title('Class prediction probabilities: '+str(preds[index_]))
+    plt.legend(plot,[i for i in labels.values()],loc='center left', bbox_to_anchor=(.99, 0.5))
+    plt.show()
+
+
+prodImagesOnSavedModel(r'E:\DeepLearningImages\Deep Learning Code and Images','prod','tenniscourt\\tenniscourt99.tif')
+
+
+
+
 
 
 
