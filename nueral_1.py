@@ -1,14 +1,6 @@
 import random
 import numpy as np
 
-'''' This is a simple nueral network from the webpage below. I have been working with the code trying to make
- changes to help me learn the subject. I am very new to this topic. I am hoping that I added the
- hidden layers correctly. Each hidden layer should take as input the output of the previous
- hidden layer. The sigmoid activation function is then applied to the output layer. I also tried
- tanh, but sigmoid gave better results.
- https://www.analyticsvidhya.com/blog/2017/05/neural-network-from-scratch-in-python-and-r/
- '''
-
 # Input array
 for b in range(5):
     x = np.array([[random.randint(0,1) for i in range(4)],[random.randint(0,1) for i in range(4)],\
